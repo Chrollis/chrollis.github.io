@@ -1,0 +1,101 @@
+/* ==================================================================
+ * Design tokens: monochrome greys, one signal yellow, one accent teal.
+ *
+ * Colours are raw RGB channels so Tailwind can compose them as
+ * `rgb(var(--ak-x) / <alpha-value>)`, which keeps variable theming and
+ * opacity modifiers both working. The hex is noted beside each token.
+ * ================================================================== */
+
+:root {
+  /* ---- Default: dark ---- */
+  --ak-bg: 11 11 12; /* #0b0b0c */
+  --ak-surface: 20 20 22; /* #141416 */
+  --ak-surface-2: 28 28 31; /* #1c1c1f */
+  --ak-text: 242 242 242; /* #f2f2f2 */
+  --ak-muted: 138 138 143; /* #8a8a8f */
+  --ak-border: 42 42 46; /* #2a2a2e */
+  --ak-accent: 255 209 0; /* #ffd100 signal yellow */
+  --ak-accent-2: 0 179 164; /* #00b3a4 teal */
+  --ak-danger: 255 77 79; /* #ff4d4f */
+
+  /* Scanline strength. The layer draws lines only, so it cannot tint the page. */
+  --ak-scan-opacity: 1;
+
+  /*
+   * Three faces, three jobs, two scripts: Outfit / Blinker / JetBrains Mono for
+   * Latin, Noto Sans SC for Chinese. Font matching runs per glyph, so one stack
+   * serves both and nothing branches on locale. Noto Sans SC is listed in all three
+   * as a coverage floor: a CJK glyph the subsetted Latin faces lack lands on a real
+   * Chinese face rather than on an OS substitution.
+   *
+   * One Chinese face on purpose - a kai/hei split made every script boundary a seam.
+   * Blinker replaced a monospace for the label role, which read as rigid at 11px with
+   * wide tracking. Code keeps a real monospace, where the fixed advance is functional.
+   * See `docs/DESIGN.md`.
+   */
+  --ak-font-sans:
+    'Outfit', 'Noto Sans SC', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --ak-font-mono:
+    'Blinker', 'Noto Sans SC', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --ak-font-code:
+    'JetBrains Mono', ui-monospace, 'Noto Sans SC', SFMono-Regular, 'SF Mono', Consolas,
+    'Liberation Mono', Menlo, monospace;
+
+  /* Layout */
+  --ak-max-width: 76rem;
+  --ak-gutter: clamp(1.25rem, 5vw, 4.5rem);
+  --ak-header-h: 4rem;
+
+  /* Latin uppercase wants room between letters; CJK does not. These do NOT vary by
+     locale - see the :lang(zh) rule below, and `docs/CONVENTIONS.md`. */
+  --ak-tracking: 0.16em;
+  --ak-tracking-wide: 0.32em;
+
+  /*
+   * Viewport floor. Below these the layout is clipped rather than compressed, so the
+   * document stops shrinking and the browser scrolls instead. Both numbers are
+   * measured: 300px because the widest cover bar needs 277px, 400px because the
+   * sticky 64px header otherwise overlaps the cover. Root only - a block box in
+   * normal flow takes the floor from its containing block, so `body` inherits it.
+   */
+  --ak-min-width: 300px;
+  --ak-min-height: 400px;
+
+  /* Motion: fast and precise, never bouncy */
+  --ak-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ak-ease-snap: cubic-bezier(0.85, 0, 0.15, 1);
+  --ak-dur: 160ms;
+}
+
+/*
+ * Chinese. `lang` is set on <html>, so `:lang(zh)` matches the whole document - which
+ * is exactly why tracking is NOT reset here. In Chinese mode the tracked elements are
+ * still Latin, and a document-wide reset took nav items from ~1.9px to ~0.2px.
+ *
+ * Only hand-written prose is opted in, per paragraph, through `.ak-cjk`: those strings are
+ * Chinese exactly when the UI is Chinese. Markdown bodies (`.ak-prose`) are deliberately
+ * NOT listed - their language is independent of the interface (a README arrives from GitHub
+ * in English, and a post keeps whatever language it was written in), so switching locale
+ * must not restyle them.
+ */
+:lang(zh) .ak-cjk {
+  letter-spacing: 0.02em;
+}
+
+/* ---- Light: cream paper, ink text, deepened accent ----
+   Opt-in only. Dark is the design's home ground, so the OS preference is ignored. */
+[data-theme='light'] {
+  --ak-bg: 244 241 234; /* #f4f1ea */
+  --ak-surface: 250 248 244; /* #faf8f4 */
+  --ak-surface-2: 235 231 222; /* #ebe7de */
+  --ak-text: 20 20 22; /* #141416 */
+  --ak-muted: 106 106 110; /* #6a6a6e */
+  --ak-border: 208 203 192; /* #d0cbc0 */
+  --ak-accent: 214 158 0; /* #d69e00 darkened for 4.5:1 on paper */
+  --ak-accent-2: 0 138 127; /* #008a7f */
+  --ak-danger: 200 32 40; /* #c82028 */
+
+  --ak-scan-opacity: 0;
+}

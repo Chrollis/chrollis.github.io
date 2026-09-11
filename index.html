@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <title>%SITE_NAME%</title>
+    <meta name="description" content="%SITE_DESCRIPTION%" />
+    <meta name="author" content="%SITE_NAME%" />
+    <meta name="theme-color" content="#0b0b0c" />
+    <meta name="color-scheme" content="dark light" />
+
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%brand/favicon.svg" />
+    <link rel="apple-touch-icon" href="%BASE_URL%brand/apple-touch-icon.png" />
+    <link rel="manifest" href="%BASE_URL%brand/site.webmanifest" />
+    <link rel="canonical" href="%SITE_URL%/" />
+
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="%SITE_NAME%"
+      href="%BASE_URL%feeds/rss.xml"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="%SITE_NAME%" />
+    <meta property="og:title" content="%SITE_NAME%" />
+    <meta property="og:description" content="%SITE_DESCRIPTION%" />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:image" content="%SITE_URL%/brand/og.png" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="%SITE_NAME%" />
+    <meta name="twitter:description" content="%SITE_DESCRIPTION%" />
+    <meta name="twitter:image" content="%SITE_URL%/brand/og.png" />
+
+    <!--
+      Dark is the default whatever the OS prefers; light is only used after an explicit
+      toggle. Language is the opposite: it consults the browser once, because whether a
+      reader can read the page is not a matter of taste.
+
+      Both run before first paint so `<html lang>` and `data-theme` are correct for it -
+      they drive :lang() selectors, screen-reader pronunciation and CJK font fallback, all
+      of which have to be right immediately rather than after React mounts.
+    -->
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('chrollis-theme')
+          var theme = stored === 'light' ? 'light' : 'dark'
+          document.documentElement.setAttribute('data-theme', theme)
+          document.documentElement.style.colorScheme = theme
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.setAttribute('content', theme === 'light' ? '#f4f1ea' : '#0b0b0c')
+
+          var locale = localStorage.getItem('chrollis-locale')
+          if (locale !== 'en' && locale !== 'zh') {
+            var tags = navigator.languages || [navigator.language || '']
+            locale = 'en'
+            for (var i = 0; i < tags.length; i++) {
+              if (String(tags[i]).toLowerCase().indexOf('zh') === 0) {
+                locale = 'zh'
+                break
+              }
+            }
+          }
+          document.documentElement.lang = locale === 'zh' ? 'zh-Hans' : 'en'
+        } catch (error) {
+          /* no-op: the CSS default is dark and the markup default is lang="en",
+             which is what we want anyway */
+        }
+      })()
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "%SITE_NAME%",
+        "url": "%SITE_URL%/",
+        "description": "%SITE_DESCRIPTION%",
+        "sameAs": ["%SITE_GITHUB%"]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 2rem; font-family: sans-serif; color: #f2f2f2; background: #0b0b0c">
+        <h1>%SITE_NAME%</h1>
+        <p>This site needs JavaScript enabled to render.</p>
+        <p><a href="%SITE_GITHUB%" style="color: #ffd100">GitHub &rarr;</a></p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

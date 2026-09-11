@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Build output and hashed assets do not need indexing.
+Disallow: /assets/
+
+Sitemap: https://chrollis.github.io/feeds/sitemap.xml

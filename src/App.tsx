@@ -10,6 +10,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import SiteBackground from '@/components/SiteBackground'
 import SiteFooter from '@/components/SiteFooter'
 import SiteHeader from '@/components/SiteHeader'
+import ThemeTransition from '@/components/ThemeTransition'
 
 // The home page is on the critical path, so it ships in the main bundle.
 import Home from '@/pages/Home'
@@ -57,6 +58,9 @@ export default function App() {
       {/* Replaces the native scrollbar, which would consume layout width and shift the
           page sideways between routes. */}
       <OverlayScrollbar />
+
+      {/* The theme colour wash: above every panel, below the cursor. */}
+      <ThemeTransition />
 
       {/* Last, so it stacks above the entry overlay: a cursor the loading screen could
           cover would leave the visitor with no pointer for the first second. Fixed and

@@ -585,13 +585,14 @@
   }
 
   /*
-   * Loading screen backdrop word: the longest thing the counter could be counting
-   * toward, set large and very dim so it reads as a watermark rather than competing
-   * with the counter. A class rather than an arbitrary value for the same reason as
-   * `.ak-display`.
+   * Loading screen backdrop word.
+   *
+   * Sized from `--ak-boot`, the boot composition's single scale, so the watermark keeps its
+   * ratio to the counter and the slashes at every width instead of drifting out of proportion
+   * as its own clamp hits its limits first.
    */
   .ak-loading-backdrop {
-    font-size: clamp(3rem, 12vw, 9rem);
+    font-size: calc(var(--ak-boot) * 1.64);
     line-height: 0.8;
     letter-spacing: 0.04em;
     font-weight: 700;

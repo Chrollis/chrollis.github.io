@@ -209,7 +209,29 @@ export default function LoadingScreen() {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] overflow-hidden bg-ak-bg transition-opacity duration-700 ${
+      /*
+       * `--ak-boot` is the whole boot composition's scale: the counter is 1em of it, the
+       * slashes 0.82em, the backdrop word 1.64em, and the spacing between them is in em too.
+       * One scale means the proportions hold at every width - see the note in index.css.
+       *
+       * Its floor is the viewport floor from tokens.css: 1.375rem is what 7.32vw comes to at
+       * `--ak-min-width` (300px), so the composition is fluid across exactly the supported
+       * range and stops at the smallest screen we design for. (The watermark is what that
+       * slope is really about: 1.64em of it is 4.068em of type, so the word is 48.8% of the
+       * viewport at every width in that range - including the narrow end.)
+       *
+       * `--ak-boot-frame` is the frame's inset from the viewport edge: 16px on a phone, 24px
+       * once there is room for it, fluid in between. It was `inset-4 sm:inset-6`, which
+       * snapped the whole frame 8px inward the moment the window crossed 640px - and since
+       * the label rows sit a further 20px inside the frame, that step pulled the content box
+       * 15px NARROWER as the window grew 1px wider.
+       *
+       * `min-w`/`min-h` repeat the document's floor here because `fixed inset-0` sizes to the
+       * viewport and inherits nothing from `html`: without them this overlay alone would keep
+       * compressing at widths where the page behind it has already stopped and started to
+       * scroll.
+       */
+      className={`[--ak-boot:clamp(1.375rem,7.32vw,5.5rem)] [--ak-boot-frame:clamp(1rem,2.2vw,1.5rem)] fixed inset-0 z-[100] min-h-[var(--ak-min-height)] min-w-[var(--ak-min-width)] overflow-hidden bg-ak-bg text-[length:var(--ak-boot)] transition-opacity duration-700 ${
         faded ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
       style={done ? { display: 'none' } : undefined}
@@ -246,30 +268,37 @@ export default function LoadingScreen() {
           share a single set of margins and cannot drift apart. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-4 border border-ak-border/70 sm:inset-6"
+        className="pointer-events-none absolute inset-[var(--ak-boot-frame)] border border-ak-border/70"
       >
         {/* Offset by -1px so the accent strokes land exactly on the frame line */}
         <span className="absolute -left-px -top-px h-6 w-6 border-l-2 border-t-2 border-ak-accent" />
         <span className="absolute -bottom-px -right-px h-6 w-6 border-b-2 border-r-2 border-ak-accent" />
       </div>
 
-      {/* Same inset as the frame plus padding, so every row lines up with the frame rather
-          than the viewport edge; `justify-between` leaves the counter floating in the middle. */}
-      <div className="relative flex h-full w-full flex-col justify-between px-8 py-9 sm:px-12 sm:py-11">
+      {/* Same inset as the frame plus 20px, so every row lines up with the frame rather
+          than the viewport edge; `justify-between` leaves the counter floating in the middle.
+          Written as the sum rather than a second pair of numbers, so the 20px between the
+          frame line and the type holds at every width. */}
+      <div className="relative flex h-full w-full flex-col justify-between p-[calc(var(--ak-boot-frame)_+_1.25rem)]">
         <div className="flex items-center justify-between">
           <span className="ak-label">{t.boot.label}</span>
           <span className="ak-index">{t.boot.serial}</span>
         </div>
 
-        {/* Centre: slash, sliding counter, slash */}
+        {/* Centre: slash, sliding counter, slash.
+            Everything in here is measured in em of `--ak-boot`, so the parts and the gap to
+            the rule keep their proportions at every width instead of each one hitting its own
+            clamp at a different width. The coefficients are the px this composition was drawn
+            at over the 88px cap: 0.82em = the 72px slashes, 0.91em = the 80px track,
+            0.23em = the 20px from the track to the rule. */}
         <div className="mx-auto w-full max-w-4xl">
-          <div className="flex items-center gap-[clamp(0.375rem,1.6vw,1.75rem)]">
+          <div className="flex items-center gap-[0.32em]">
             <Slash />
 
-            <div ref={trackRef} className="relative h-16 flex-1 sm:h-20">
+            <div ref={trackRef} className="relative h-[0.91em] flex-1">
               <div
                 ref={counterRef}
-                className="absolute bottom-0 top-0 flex items-center font-mono text-[clamp(2.75rem,9vw,5.5rem)] font-bold leading-none tracking-tighter text-ak-accent will-change-transform"
+                className="absolute bottom-0 top-0 flex items-center font-mono text-[1em] font-bold leading-none tracking-tighter text-ak-accent will-change-transform"
               >
                 0%
               </div>
@@ -278,8 +307,10 @@ export default function LoadingScreen() {
             <Slash flip />
           </div>
 
-          {/* The fill scales from the left edge so it grows in step with the counter. */}
-          <div className="relative mt-5">
+          {/* The fill scales from the left edge so it grows in step with the counter. The rule
+              and its ticks stay in px: a hairline that scales stops being a hairline, and the
+              ticks around the counter are already fine detail at the narrow end. */}
+          <div className="relative mt-[0.23em]">
             <div className="h-px w-full bg-ak-border" />
             <span
               ref={barRef}
@@ -297,14 +328,17 @@ export default function LoadingScreen() {
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="ak-label">{t.boot.status}</span>
-            <span className="ak-index">{t.boot.statusSerial}</span>
-          </div>
+        <div className="relative flex items-center justify-between">
+          <span className="ak-label">{t.boot.status}</span>
+          <span className="ak-index">{t.boot.statusSerial}</span>
+
+          {/* Anchored above this row, out of the flow. In the flow it would push the row up by
+              its own height plus the gap, and the two label rows would stop mirroring each
+              other around the frame. `ak-label` so it matches the row's own micro-type, one
+              step dimmer because it is the hint rather than the reading. */}
           <p
             className={cn(
-              'text-center font-mono text-[0.625rem] tracking-ak text-ak-muted/50',
+              'ak-label absolute inset-x-0 bottom-full mb-2 text-center text-ak-muted/50',
               !ready && 'invisible',
             )}
           >
@@ -316,13 +350,14 @@ export default function LoadingScreen() {
   )
 }
 
-/** Angular slash mark bracketing the counter. */
+/** Angular slash mark bracketing the counter. Sized in em of `--ak-boot` - see the middle
+ *  block's note - so it stays in proportion to the counter rather than stepping at `sm`. */
 function Slash({ flip = false }: { flip?: boolean }) {
   return (
     <svg
       aria-hidden
       viewBox="0 0 100 300"
-      className={`h-14 w-auto shrink-0 text-ak-muted/40 sm:h-[4.5rem] ${flip ? '-scale-x-100' : ''}`}
+      className={`h-[0.82em] w-auto shrink-0 text-ak-muted/40 ${flip ? '-scale-x-100' : ''}`}
       fill="currentColor"
     >
       <polygon points="74,0 0,300 26,300 100,0" />

@@ -1,17 +1,18 @@
 import { Moon, Sun } from 'lucide-react'
 
 import { useLocale } from '@/lib/locale'
-import { useTheme } from '@/lib/theme'
+import { switchTheme, useTheme } from '@/lib/theme'
 
 export default function ThemeToggle({ className }: { className?: string }) {
   const { t } = useLocale()
-  const { isDark, toggle } = useTheme()
+  const { isDark } = useTheme()
   const label = isDark ? t.nav.toggleLight : t.nav.toggleDark
+  const next = isDark ? 'light' : 'dark'
 
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={() => switchTheme(next)}
       className={`group relative flex h-10 w-10 items-center justify-center border border-ak-border text-ak-muted transition-colors duration-ak hover:border-ak-accent hover:text-ak-accent ${className ?? ''}`}
       aria-label={label}
       title={label}

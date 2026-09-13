@@ -62,8 +62,35 @@ export function setTheme(theme: Theme) {
   emit()
 }
 
+/** Routed through `switchTheme` so a caller cannot bypass the mask by accident. */
 export function toggleTheme() {
-  setTheme(current === 'dark' ? 'light' : 'dark')
+  switchTheme(current === 'dark' ? 'light' : 'dark')
+}
+
+/**
+ * The mask transition registers itself here on mount.
+ *
+ * A module-level slot rather than a context: the theme is already an external store, and the
+ * mask has to sit at the app root - above every panel, below the cursor - not inside the
+ * button that triggers it.
+ */
+let swap: ((next: Theme) => void) | null = null
+
+export function registerThemeSwap(runner: ((next: Theme) => void) | null): void {
+  swap = runner
+}
+
+/**
+ * Change the theme, through the mask when one is registered and motion is allowed. Falls back
+ * to an instant swap, which is also what reduced motion gets.
+ */
+export function switchTheme(next: Theme): void {
+  if (next === current) return
+  if (!swap || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setTheme(next)
+    return
+  }
+  swap(next)
 }
 
 export function useTheme() {

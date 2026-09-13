@@ -3,6 +3,7 @@ import { MapPin } from 'lucide-react'
 
 import EmailLink from '@/components/EmailLink'
 import { PageHeader, PageShell } from '@/components/Primitives'
+import Scramble from '@/components/Scramble'
 import StatsPanel from '@/components/StatsPanel'
 import { site } from '@/data/site'
 import { useLocale } from '@/lib/locale'
@@ -36,13 +37,15 @@ export default function AboutPage() {
           </motion.div>
 
           <div className="mt-5 space-y-4">
-            {t.content.bio.map((paragraph) => (
+            {/* Index key, not the paragraph text: a text key changes with the locale and
+                would remount the paragraph, which cancels the scramble before it starts. */}
+            {t.content.bio.map((paragraph, index) => (
               <motion.p
-                key={paragraph.slice(0, 16)}
+                key={index}
                 variants={fadeUp}
                 className="ak-text-pretty ak-cjk text-sm leading-relaxed text-ak-muted md:text-[0.9375rem]"
               >
-                {paragraph}
+                <Scramble text={paragraph} />
               </motion.p>
             ))}
           </div>

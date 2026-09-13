@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
+import Scramble from '@/components/Scramble'
 import { site } from '@/data/site'
 import { ARROW_NE } from '@/lib/glyphs'
 import { useLocale } from '@/lib/locale'
@@ -38,7 +39,7 @@ export default function NotFoundPage() {
       </motion.h1>
 
       <motion.p variants={fadeUp} className="mt-6 max-w-lg text-sm leading-relaxed text-ak-muted">
-        {t.notFound.body}
+        <Scramble text={t.notFound.body} />
       </motion.p>
 
       <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">

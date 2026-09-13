@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 
+import Scramble from '@/components/Scramble'
 import { fadeUp, stagger } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
@@ -42,7 +43,7 @@ export function PageHeader({
 
       {description && (
         <p className="ak-text-pretty ak-cjk mt-4 max-w-2xl text-sm leading-relaxed text-ak-muted md:text-base">
-          {description}
+          <Scramble text={description} />
         </p>
       )}
     </motion.header>

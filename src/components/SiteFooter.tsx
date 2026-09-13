@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 
 import LogoMark from '@/components/LogoMark'
+import Scramble from '@/components/Scramble'
 import SocialLinks from '@/components/SocialLinks'
 import { site } from '@/data/site'
 import { assetUrl } from '@/lib/assets'
@@ -43,7 +44,7 @@ export default function SiteFooter() {
             </div>
 
             <p className="ak-cjk mt-4 max-w-sm text-sm leading-relaxed text-ak-muted">
-              {t.content.description}
+              <Scramble text={t.content.description} />
             </p>
 
             {/* Accounts, once each */}

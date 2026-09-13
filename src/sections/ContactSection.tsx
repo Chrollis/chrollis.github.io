@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 
 import ContactForm from '@/components/ContactForm'
 import EmailLink from '@/components/EmailLink'
+import Scramble from '@/components/Scramble'
 import SocialLinks from '@/components/SocialLinks'
 import { site } from '@/data/site'
 import { ARROW_NE } from '@/lib/glyphs'
@@ -26,7 +27,7 @@ export default function ContactSection() {
       <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
         <motion.div variants={fadeUp}>
           <p className="ak-text-pretty ak-cjk text-sm leading-relaxed text-ak-muted md:text-[0.9375rem]">
-            {t.contact.intro}
+            <Scramble text={t.contact.intro} />
           </p>
 
           <div className="mt-7 flex items-center gap-3">
@@ -60,7 +61,7 @@ export default function ContactSection() {
               </div>
 
               <p className="mt-4 text-sm leading-relaxed text-ak-muted">
-                {t.contact.notConfiguredHelp}
+                <Scramble text={t.contact.notConfiguredHelp} />
               </p>
 
               <div className="mt-5 flex flex-wrap gap-3">

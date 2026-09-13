@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Clock } from 'lucide-react'
 
 import { PageHeader, PageShell } from '@/components/Primitives'
+import Scramble from '@/components/Scramble'
 import { useLocale } from '@/lib/locale'
 import { fadeUp } from '@/lib/motion'
 import { getAllTags, postMetas } from '@/lib/posts'
@@ -77,7 +78,9 @@ export default function BlogPage() {
             className="border border-dashed border-ak-border px-6 py-16 text-center"
           >
             <p className="font-mono text-xs tracking-ak text-ak-muted">{t.blog.empty}</p>
-            <p className="mt-3 text-xs text-ak-muted/70">{t.blog.emptyHint}</p>
+            <p className="mt-3 text-xs text-ak-muted/70">
+              <Scramble text={t.blog.emptyHint} />
+            </p>
           </motion.div>
         ) : (
           <motion.ul

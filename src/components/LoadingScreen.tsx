@@ -1,33 +1,47 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useLocale } from '@/lib/locale'
+import { warmNoiseFont } from '@/lib/scramble'
+import { cn } from '@/lib/utils'
 
 /**
  * Entry loading screen: a large percentage counter that slides across its track while it
  * counts, bracketed by slash marks like a technical readout.
  *
- * Deliberately deterministic. An earlier version gated the counter on real asset loads and
- * raced its own "page ready" signal, which could strand the overlay at 0% indefinitely. For
- * decorative chrome a completion guarantee beats a truthful byte count: the counter always
- * reaches 100% at `DURATION_MS`, and the overlay is only held until the page is interactive,
- * with `MAX_WAIT_MS` guaranteeing that arrives too.
+ * The counter is a fixed, fake ride: one EaseInOut sweep to 100% over `DURATION_MS`, the same
+ * on every visit. It is deliberately not tied to any resource - a bar that moves at the speed
+ * of the network tells the reader nothing they cannot already see, and it makes the boot a
+ * different shape every time.
+ *
+ * What the overlay does wait for is the noise glyphs the scramble needs, so the first language
+ * flip cannot render half its noise in a fallback font. The page stays covered until both the
+ * ride and the fonts are done - and no longer, because `RESOURCE_BUDGET_MS` bounds that wait:
+ * `document.fonts.load` can hang on a stalled connection, and rAF does not fire at all in a
+ * background tab, so without the bound the overlay would stay mounted with
+ * `body { overflow: hidden }` for the rest of the session.
  *
  * The counter updates every frame, so it writes to the DOM directly through refs rather than
  * re-rendering a tree sixty times a second for one text node.
  */
-const DURATION_MS = 1500
+/** The ride: one fake EaseInOut sweep, the same on every visit. */
+const DURATION_MS = 2400
+/** How long after the ride the overlay may keep waiting for the noise glyphs. */
+const RESOURCE_BUDGET_MS = 2000
 /** Fade-out length. Must match the opacity transition on the overlay. */
 const FADE_MS = 700
-/** Hard cap on waiting for the page to become interactive. */
-const MAX_WAIT_MS = 3000
+/** Beat on 100% before the fade starts. */
+const HOLD_MS = 160
 
 type Phase = 'loading' | 'hiding' | 'done'
 
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+/** Ease in and out: slow at both ends, which is what makes the ride read as machinery. */
+const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
 
 export default function LoadingScreen() {
   const { t } = useLocale()
   const [phase, setPhase] = useState<Phase>('loading')
+  /** True once the page and the noise glyphs are both in - see the skip effect below. */
+  const [ready, setReady] = useState(false)
 
   const trackRef = useRef<HTMLDivElement>(null)
   const counterRef = useRef<HTMLDivElement>(null)
@@ -44,8 +58,21 @@ export default function LoadingScreen() {
 
     const start = performance.now()
     let frame = 0
-    let ready = document.readyState === 'complete'
     let finished = false
+
+    /* The two gates: the page has loaded, and the noise glyph slices are in. */
+    let pageReady = document.readyState === 'complete'
+    let fontsReady = false
+    let readyAt: number | null = null
+
+    const markReady = () => {
+      if (readyAt !== null) return
+      readyAt = performance.now()
+      setReady(true)
+    }
+    const checkReady = () => {
+      if (pageReady && fontsReady) markReady()
+    }
 
     /* Geometry measured once, not per frame: measuring in the loop would force a reflow
        every tick, and the counter is tabular, so "100%" is always the widest string. */
@@ -58,11 +85,11 @@ export default function LoadingScreen() {
       travel = Math.max(0, track.offsetWidth - counterWidth)
     }
 
-    const paint = (percent: number) => {
-      counter.textContent = `${Math.round(percent)}%`
+    const paint = (value: number) => {
+      counter.textContent = `${Math.round(value)}%`
       // translate3d stays on the compositor; animating `left` would relayout every frame.
-      counter.style.transform = `translate3d(${(percent / 100) * travel}px,0,0)`
-      if (barRef.current) barRef.current.style.transform = `scaleX(${percent / 100})`
+      counter.style.transform = `translate3d(${(value / 100) * travel}px,0,0)`
+      if (barRef.current) barRef.current.style.transform = `scaleX(${value / 100})`
     }
 
     const finish = () => {
@@ -74,37 +101,45 @@ export default function LoadingScreen() {
       }
       paint(100)
       // Let the 100% state read for a beat before the fade starts.
-      window.setTimeout(() => setPhase('hiding'), 160)
+      window.setTimeout(() => setPhase('hiding'), HOLD_MS)
     }
 
-    /*
-     * Completion is driven by a timer, NOT by the animation frame loop: rAF does not fire at
-     * all while the document is hidden, and opening a link in a background tab is normal.
-     * When the loop was the only thing that could finish, a background tab left the overlay
-     * mounted with `body { overflow: hidden }` applied, silently disabling scroll for the
-     * session. So the timer guarantees the transition and rAF only interpolates: a frozen
-     * animation degrades to "no motion", never to "stuck".
-     */
-    const finishTimer = window.setTimeout(() => {
-      ready = true
-      finish()
-    }, DURATION_MS + 120)
-
-    const tick = () => {
+    const tick = (now: number) => {
       if (finished) return
-      const t = Math.min(1, (performance.now() - start) / DURATION_MS)
-      paint(100 * easeOutCubic(t))
+      const elapsed = now - start
+      paint(100 * easeInOut(Math.min(1, elapsed / DURATION_MS)))
+      /* Both the ride and the fonts are done: there is nothing left to wait for. */
+      if (elapsed >= DURATION_MS && readyAt !== null) {
+        finish()
+        return
+      }
       frame = requestAnimationFrame(tick)
     }
 
-    const onReady = () => {
-      ready = true
+    const onLoad = () => {
+      pageReady = true
+      checkReady()
     }
+    if (!pageReady) window.addEventListener('load', onLoad, { once: true })
 
-    if (!ready) window.addEventListener('load', onReady, { once: true })
+    /*
+     * The noise glyphs are the only thing the ride waits for. Fire and forget: the promise
+     * settles whether they arrive or not, and the bound below covers the case where it does
+     * not, so a blocked fetch can never strand the overlay.
+     */
+    void warmNoiseFont().then(() => {
+      fontsReady = true
+      checkReady()
+    })
 
-    // Guarantees the wait on `load` always ends, whatever the event does.
-    const capTimer = window.setTimeout(onReady, MAX_WAIT_MS)
+    /*
+     * A timer, not the frame loop: this is the guarantee that the overlay leaves even in a
+     * background tab, where no frame ever runs.
+     */
+    const capTimer = window.setTimeout(() => {
+      setReady(true)
+      finish()
+    }, DURATION_MS + RESOURCE_BUDGET_MS)
 
     measure()
     window.addEventListener('resize', measure)
@@ -114,29 +149,37 @@ export default function LoadingScreen() {
       const timer = window.setTimeout(() => setPhase('hiding'), 400)
       return () => {
         window.clearTimeout(timer)
-        window.clearTimeout(finishTimer)
         window.clearTimeout(capTimer)
         window.removeEventListener('resize', measure)
-        window.removeEventListener('load', onReady)
+        window.removeEventListener('load', onLoad)
       }
     }
 
     paint(0)
     frame = requestAnimationFrame(tick)
 
-    window.addEventListener('pointerdown', skip)
-    window.addEventListener('keydown', skip)
-
     return () => {
       if (frame) cancelAnimationFrame(frame)
-      window.clearTimeout(finishTimer)
       window.clearTimeout(capTimer)
       window.removeEventListener('resize', measure)
-      window.removeEventListener('load', onReady)
+      window.removeEventListener('load', onLoad)
+    }
+  }, [phase, skip])
+
+  /*
+   * Skip is offered only once the real loading is done. While the page or the noise glyphs are
+   * still arriving, skipping would cancel the very load that makes the effect look right - and
+   * `MAX_WAIT_MS` already guarantees the overlay leaves, so there is nothing to escape from.
+   */
+  useEffect(() => {
+    if (!ready) return
+    window.addEventListener('pointerdown', skip)
+    window.addEventListener('keydown', skip)
+    return () => {
       window.removeEventListener('pointerdown', skip)
       window.removeEventListener('keydown', skip)
     }
-  }, [phase, skip])
+  }, [ready, skip])
 
   /* Unmount once the fade has finished. */
   useEffect(() => {
@@ -259,7 +302,12 @@ export default function LoadingScreen() {
             <span className="ak-label">{t.boot.status}</span>
             <span className="ak-index">{t.boot.statusSerial}</span>
           </div>
-          <p className="text-center font-mono text-[0.625rem] tracking-ak text-ak-muted/50">
+          <p
+            className={cn(
+              'text-center font-mono text-[0.625rem] tracking-ak text-ak-muted/50',
+              !ready && 'invisible',
+            )}
+          >
             {t.boot.skip}
           </p>
         </div>

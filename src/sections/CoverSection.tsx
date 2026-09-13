@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useReducedMotion } from 'framer-motion'
 
+import Scramble from '@/components/Scramble'
 import { site } from '@/data/site'
 import { ARROW_NE } from '@/lib/glyphs'
 import { useLocale } from '@/lib/locale'
@@ -265,7 +266,7 @@ function BottomBar() {
         </button>
 
         <p className="ak-cjk max-w-lg text-xs leading-relaxed text-ak-muted sm:text-sm">
-          {t.cover.note}
+          <Scramble text={t.cover.note} />
         </p>
 
         {/*

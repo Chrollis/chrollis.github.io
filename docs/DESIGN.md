@@ -225,6 +225,20 @@ semi-implicit Euler step, so theirs is the usual approximation rather than an id
 
 ### The pointer interaction
 
+A finger drives it too, and **`pointercancel` is what keeps that compatible with scrolling.**
+When the browser decides a gesture is a scroll it cancels the pointer; the field releases its
+capture and its glow on that signal. Without it a swipe left the button logically down - dots
+captured and the ring lit, chasing the last place the finger was seen, for the rest of the
+session.
+
+The interaction was disabled on touch for one round while "the page will not scroll on a
+phone" was being chased. It changed nothing, which is precisely what ruled the field out: the
+real causes were the boot overlay's document-wide scroll lock (it held the page for up to five
+seconds after every load and swallowed the first gesture), six decorative boxes using
+`overflow: hidden` - a scroll container on iOS, so a swipe starting on one belonged to it -
+and `overflow-x: hidden` on `body`, which made it a scroll container in both axes. See
+[DECISIONS.md](./DECISIONS.md).
+
 Holding the button seats free dots inside the capture radius on concentric **tracks** at
 12, 24, 36, 48... px, innermost first, spilling outward when full. Each track holds
 `floor(r/2)` dots and the whole set rotates.

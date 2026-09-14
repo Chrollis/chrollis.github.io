@@ -11,6 +11,7 @@ import ThemeToggle from '@/components/ThemeToggle'
 import { site } from '@/data/site'
 import { useLocale } from '@/lib/locale'
 import { EASE_AK } from '@/lib/motion'
+import { useScrollLock } from '@/lib/scrollLock'
 import { cn } from '@/lib/utils'
 
 /**
@@ -46,15 +47,9 @@ export default function SiteHeader() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  // Lock body scroll while the drawer is open
-  useEffect(() => {
-    if (!menuOpen) return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [menuOpen])
+  // Lock body scroll while the drawer is open. Shared with the boot overlay's lock, so the
+  // two cannot restore a stale value over each other - see `lib/scrollLock.ts`.
+  useScrollLock(menuOpen)
 
   /*
    * Close the drawer once the window is wide enough for the real navigation. `menuOpen` is
@@ -88,17 +83,17 @@ export default function SiteHeader() {
         )}
       >
         {/*
-          * Three columns, not `justify-between`: with `justify-between` the middle child is
-          * only centred if the outer two are the same width, and here the logo is 40px
-          * against a control cluster well over 100px. `minmax(0, 1fr)` on the outer columns
-          * is load-bearing - a bare `1fr` resolves to `minmax(auto, 1fr)` and cannot shrink
-          * below its content, which left the nav 31px off centre.
-          *
-          * Two columns below 900px, three above. `display: none` removes the nav from grid
-          * layout entirely, so the column count has to match the items actually rendered or
-          * the controls land in the `auto` second column, which is sized before the `1fr`
-          * tracks and left the brand 21px for a 40px box.
-          */}
+         * Three columns, not `justify-between`: with `justify-between` the middle child is
+         * only centred if the outer two are the same width, and here the logo is 40px
+         * against a control cluster well over 100px. `minmax(0, 1fr)` on the outer columns
+         * is load-bearing - a bare `1fr` resolves to `minmax(auto, 1fr)` and cannot shrink
+         * below its content, which left the nav 31px off centre.
+         *
+         * Two columns below 900px, three above. `display: none` removes the nav from grid
+         * layout entirely, so the column count has to match the items actually rendered or
+         * the controls land in the `auto` second column, which is sized before the `1fr`
+         * tracks and left the brand 21px for a 40px box.
+         */}
         <div className="ak-container grid h-16 grid-cols-2 items-center gap-4 min-[900px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
           {/* Brand, in the same bordered square as the controls. Measured, the mark
               carries about four times the on-screen ink of the controls, so a bar that is
@@ -245,14 +240,15 @@ export default function SiteHeader() {
             />
 
             <motion.nav
-              className="absolute right-0 top-0 h-full w-[86%] max-w-sm border-l border-ak-border bg-ak-surface"
+              className="absolute right-0 top-0 flex h-full w-[86%] max-w-sm flex-col border-l border-ak-border bg-ak-surface"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'tween', ease: EASE_AK, duration: 0.22 }}
               aria-label={t.nav.drawer}
             >
-              <div className="flex h-16 items-center justify-between border-b border-ak-border px-5">
+              {/* `shrink-0` so the close button stays reachable however tall the list gets. */}
+              <div className="flex h-16 shrink-0 items-center justify-between border-b border-ak-border px-5">
                 <span className="ak-label">{t.nav.label}</span>
                 <button
                   type="button"
@@ -264,43 +260,53 @@ export default function SiteHeader() {
                 </button>
               </div>
 
-              <ul className="divide-y divide-ak-border">
-                {site.nav.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      end={item.to === '/'}
-                      /* Close on click rather than watching the route in an effect: same
+              {/*
+               * The list scrolls on its own. On a short or landscape phone the drawer is
+               * taller than the viewport, and without this the last rows were simply
+               * unreachable - with the page behind it scroll-locked, so there was no gesture
+               * that could get to them. `min-h-0` because a flex item's automatic minimum is
+               * its content height: without it the box overflows the drawer instead of
+               * scrolling. `overscroll-contain` keeps the drag from chaining to the page.
+               */}
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <ul className="divide-y divide-ak-border">
+                  {site.nav.map((item) => (
+                    <li key={item.to}>
+                      <NavLink
+                        to={item.to}
+                        end={item.to === '/'}
+                        /* Close on click rather than watching the route in an effect: same
                          result, one render pass fewer. */
-                      onClick={() => setMenuOpen(false)}
-                      className={({ isActive }) =>
-                        cn(
-                          'relative flex items-center justify-between px-5 py-4 transition-colors duration-ak',
-                          isActive ? 'bg-ak-bg text-ak-accent' : 'text-ak-text hover:bg-ak-bg',
-                        )
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <span className="flex items-baseline gap-3">
-                            <span className="ak-index">{item.index}</span>
-                            <span className="text-lg">{t.pages[item.key]}</span>
-                          </span>
-                          {isActive && <span className="h-1.5 w-1.5 bg-ak-accent" />}
-                        </>
-                      )}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
+                        onClick={() => setMenuOpen(false)}
+                        className={({ isActive }) =>
+                          cn(
+                            'relative flex items-center justify-between px-5 py-4 transition-colors duration-ak',
+                            isActive ? 'bg-ak-bg text-ak-accent' : 'text-ak-text hover:bg-ak-bg',
+                          )
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <span className="flex items-baseline gap-3">
+                              <span className="ak-index">{item.index}</span>
+                              <span className="text-lg">{t.pages[item.key]}</span>
+                            </span>
+                            {isActive && <span className="h-1.5 w-1.5 bg-ak-accent" />}
+                          </>
+                        )}
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
 
-              {/* Stacked, label above the chips, not `justify-between`: on one row the
+                {/* Stacked, label above the chips, not `justify-between`: on one row the
                   label and first chip sat 0px apart at 320px, and with a gap the list still
                   could not fit beside it below 375px. The drawer is at most 384px wide, so
                   there is no width where one row is comfortable. */}
-              <div className="border-t border-ak-border px-5 py-5">
-                <span className="ak-label">{t.nav.links}</span>
-                <SocialLinks variant="full" className="mt-3" />
+                <div className="border-t border-ak-border px-5 py-5">
+                  <span className="ak-label">{t.nav.links}</span>
+                  <SocialLinks variant="full" className="mt-3" />
+                </div>
               </div>
             </motion.nav>
           </motion.div>

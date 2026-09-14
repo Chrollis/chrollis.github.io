@@ -57,7 +57,25 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    overflow-x: hidden;
+
+    /*
+     * There is deliberately NO `overflow-x: hidden` here, and it must not come back.
+     *
+     * A `hidden` next to a `visible` computes the `visible` axis to `auto`, so this one
+     * declaration made `body` a scroll container in BOTH axes. On Safari a touch drag then
+     * belongs to `body` instead of the document, which is the classic "the page will not
+     * scroll with a finger" failure; and it is the same root-overflow link `DECISIONS.md`
+     * warns about, the one that also silently breaks every
+     * `body.style.overflow = 'hidden'` scroll lock. It was there to hide a stray horizontal
+     * overflow that has since been fixed at its source with `min-width: 0`.
+     *
+     * It also fought `--ak-min-width`: that floor says the document stops shrinking and the
+     * browser scrolls instead, which a hidden x axis makes impossible.
+     *
+     * If something overflows sideways again: check
+     * `document.documentElement.scrollWidth > clientWidth`, walk the subtree, fix the box
+     * that is too wide. Clipping it here hides the symptom and breaks scrolling.
+     */
 
     /*
      * Suppressing selection is what makes the pointer interaction usable: a dot is

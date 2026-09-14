@@ -31,8 +31,7 @@ function htmlCopy(): Plugin {
     name: 'html-copy',
     transformIndexHtml: {
       order: 'pre',
-      handler: (html) =>
-        html.replace(/%([A-Z_]+)%/g, (match, key: string) => values[key] ?? match),
+      handler: (html) => html.replace(/%([A-Z_]+)%/g, (match, key: string) => values[key] ?? match),
     },
   }
 }

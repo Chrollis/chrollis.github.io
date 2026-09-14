@@ -22,7 +22,15 @@ const BETWEEN_MS = 420
 
 export default function CoverSection() {
   return (
-    <section className="relative flex min-h-[calc(100svh-4rem)] flex-col overflow-hidden">
+    /*
+     * `overflow-clip`, NOT `overflow-hidden`. Both clip the decorations at the same edge,
+     * but `hidden` makes the box a scroll container and `clip` does not - and on iOS a
+     * touch that starts inside a scroll container belongs to it. This section is the whole
+     * first screen of the home page, so with `hidden` a finger swipe on the cover was
+     * delivered to a box with nothing to scroll: the page behind it never moved, while a
+     * swipe on the header or the footer (outside the box) scrolled normally.
+     */
+    <section className="relative flex min-h-[calc(100svh-4rem)] flex-col overflow-clip">
       {/* Signature texture: very low contrast horizontal lines. Pure CSS, no
           asset, and it never tints the page because it draws lines only. */}
       <div aria-hidden className="ak-scanlines pointer-events-none absolute inset-0 z-0" />

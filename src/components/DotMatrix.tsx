@@ -761,6 +761,20 @@ export default function DotMatrix({ className }: { className?: string }) {
       draw(px, py, pointerGlow)
     }
 
+    /*
+     * Touch drives the field again - but only because the real cause of "the page will not
+     * scroll on a phone" turned out to be elsewhere: the boot overlay held a document-wide
+     * scroll lock and swallowed the first gesture for up to five seconds after every load,
+     * six decorative boxes were `overflow: hidden` (a scroll container on iOS, so a swipe
+     * that started on one belonged to it), and `body` carried `overflow-x: hidden`, which
+     * made it a scroll container in both axes. Disabling this interaction changed nothing,
+     * which is what ruled it out. See `DECISIONS.md`.
+     *
+     * `pointercancel` is what keeps the two compatible: when the browser decides a gesture
+     * is a scroll, it cancels the pointer, and without this the field kept the button down -
+     * dots stayed captured and the ring stayed lit, chasing the last place the finger was
+     * seen, for the rest of the session.
+     */
     const onPointerMove = (event: PointerEvent) => {
       /* First sample of a session: land the eased position on the cursor. */
       if (!pointerActive) {
@@ -784,6 +798,11 @@ export default function DotMatrix({ className }: { className?: string }) {
     const onPointerUp = () => {
       /* `pointerActive` stays true so a later press starts from the right place. */
       pointerDown = false
+    }
+    /** The browser took the gesture over - a scroll, an edge swipe. Release everything. */
+    const onPointerCancel = () => {
+      pointerDown = false
+      pointerActive = false
     }
     const onPointerLeave = () => {
       pointerActive = false
@@ -824,6 +843,7 @@ export default function DotMatrix({ className }: { className?: string }) {
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerdown', onPointerDown, { passive: true })
     window.addEventListener('pointerup', onPointerUp, { passive: true })
+    window.addEventListener('pointercancel', onPointerCancel, { passive: true })
     document.addEventListener('pointerleave', onPointerLeave)
     window.addEventListener('blur', onPointerLeave)
 
@@ -845,6 +865,7 @@ export default function DotMatrix({ className }: { className?: string }) {
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerdown', onPointerDown)
       window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerCancel)
       document.removeEventListener('pointerleave', onPointerLeave)
       window.removeEventListener('blur', onPointerLeave)
     }

@@ -61,8 +61,11 @@ export default function RepoCard({
         </span>
       </div>
 
-      {/* Illustration */}
-      <div className="relative flex h-28 items-center justify-center overflow-hidden border-b border-ak-border bg-ak-bg/60">
+      {/* Illustration. `overflow-clip`, not `overflow-hidden`: the grid layer below is a
+          full-bleed absolute box with no `pointer-events: none`, so with `hidden` this
+          box was a scroll container and a touch that landed on the artwork belonged to
+          it rather than to the page. Same clipping, no scroll container. */}
+      <div className="relative flex h-28 items-center justify-center overflow-clip border-b border-ak-border bg-ak-bg/60">
         <div
           aria-hidden
           className="absolute inset-0 opacity-[0.3]"
@@ -181,7 +184,7 @@ export default function RepoCard({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: EASE_AK }}
-            className="overflow-hidden border-t border-ak-border"
+            className="overflow-clip border-t border-ak-border"
           >
             {/* Fixed height, not max-height: with a ceiling, an expanded card's height
                 depended on that README's length, so the layout shifted differently every

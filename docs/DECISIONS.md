@@ -47,6 +47,24 @@ that came out of these live in [CONVENTIONS.md](./CONVENTIONS.md); the current d
 - **The viewport floor on `body`** - a block box in normal flow is only as wide as its
   containing block, so the same declaration does nothing there. It belongs on `html`.
   Verified across 100 viewport/route/locale combinations.
+- **`overflow-x: hidden` on `body`** - a `hidden` beside a `visible` computes the `visible`
+  axis to `auto`, so this made `body` a scroll container in both axes. On Safari a touch
+  drag then belongs to `body`, not the document, which is the "the page will not scroll with
+  a finger" failure; it is also the same root-overflow link as the entry above. It was
+  hiding an overflow that had already been fixed with `min-width: 0`, and it fought
+  `--ak-min-width` (a floor is pointless if the x axis cannot scroll). Removed. Anything
+  that overflows sideways now gets found and fixed instead of clipped.
+- **`overflow: hidden` used only to clip decoration** - it makes the box a scroll container
+  as well, so on iOS a swipe that starts on the box is delivered to the box. On the cover
+  section that was the whole first screen, and the page behind it never moved - but a swipe
+  on the header or footer, which are outside the box, scrolled fine. Decorative clipping is
+  `overflow: clip`: same edge, no scroll container. (`overflow: hidden` stays where the box
+  is meant to absorb touches - the boot overlay - and on `SiteBackground`, which is
+  `pointer-events: none`.)
+- **Two independent scroll locks** - each read the current inline `overflow`, wrote
+  `hidden`, and wrote the old value back on cleanup. Overlap them and a stale value is
+  restored: open the drawer during the boot and the document never unlocks. One shared
+  counter in `lib/scrollLock.ts` instead.
 - **A content-sized card row** - one reserved line for the topic row was not enough:
   `carross` needed 361px in 310px and `scu-dsa-lab` 315px, while two other cards cleared
   one line by only 6px. A mask-fade truncation was rejected because tags must stay

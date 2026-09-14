@@ -21,7 +21,7 @@ export default function StatsPanel() {
   return (
     <motion.div variants={fadeUp} className="space-y-5">
       {stats.overview.length > 0 && (
-        <div className="ak-panel overflow-hidden">
+        <div className="ak-panel overflow-clip">
           <div className="flex items-center justify-between border-b border-ak-border px-4 py-3">
             <span className="ak-label">{t.about.stats}</span>
             <a
@@ -53,7 +53,7 @@ export default function StatsPanel() {
       )}
 
       {topLanguages.length > 0 && (
-        <div className="ak-panel overflow-hidden">
+        <div className="ak-panel overflow-clip">
           <div className="flex items-center justify-between border-b border-ak-border px-4 py-3">
             <span className="ak-label">{t.projects.languages}</span>
             <span className="ak-index">{t.about.statsByVolume}</span>
@@ -62,7 +62,7 @@ export default function StatsPanel() {
           <div className="p-4">
             {/* One stacked bar plus a legend. Denser and quicker to read than a
                 separate bar per language. */}
-            <div className="flex h-2 w-full overflow-hidden bg-ak-border">
+            <div className="flex h-2 w-full overflow-clip bg-ak-border">
               {topLanguages.map((language) => (
                 <span
                   key={language.name}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useLocale } from '@/lib/locale'
 import { warmNoiseFont } from '@/lib/scramble'
+import { useScrollLock } from '@/lib/scrollLock'
 import { cn } from '@/lib/utils'
 
 /**
@@ -167,17 +168,32 @@ export default function LoadingScreen() {
   }, [phase, skip])
 
   /*
-   * Skip is offered only once the real loading is done. While the page or the noise glyphs are
-   * still arriving, skipping would cancel the very load that makes the effect look right - and
-   * `MAX_WAIT_MS` already guarantees the overlay leaves, so there is nothing to escape from.
+   * Skip: mouse and keyboard only once the real loading is done, a finger always.
+   *
+   * While the page or the noise glyphs are still arriving, skipping would cancel the very
+   * load that makes the effect look right - and the cap timer already guarantees the overlay
+   * leaves, so there is nothing to escape from. That reasoning holds for a mouse, which is
+   * pointing at the counter and can read it.
+   *
+   * It does not hold for a finger. The first thing a phone does with a new page is swipe at
+   * it, and the overlay swallowed that gesture into a dead document - the overlay is opaque,
+   * the page behind it is scroll-locked, and until `ready` nothing could end it. Measured
+   * with the `#scroll-debug` probe: `scroll events 0`, `body.style.overflow hidden`, target
+   * = the boot overlay. So on touch the first contact ends the ride, which is also what the
+   * visible SKIP hint promises.
    */
   useEffect(() => {
-    if (!ready) return
-    window.addEventListener('pointerdown', skip)
-    window.addEventListener('keydown', skip)
+    const onPointerDown = (event: PointerEvent) => {
+      if (ready || event.pointerType === 'touch') skip()
+    }
+    const onKeyDown = () => {
+      if (ready) skip()
+    }
+    window.addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('keydown', onKeyDown)
     return () => {
-      window.removeEventListener('pointerdown', skip)
-      window.removeEventListener('keydown', skip)
+      window.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('keydown', onKeyDown)
     }
   }, [ready, skip])
 
@@ -188,15 +204,14 @@ export default function LoadingScreen() {
     return () => window.clearTimeout(timer)
   }, [phase])
 
-  /* Lock scrolling while the overlay is up. */
-  useEffect(() => {
-    if (phase === 'done') return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [phase])
+  /*
+   * Lock scrolling while the overlay is OPAQUE, not while it is merely mounted. The fade is
+   * already `pointer-events: none` with the page visible through it, so holding the document
+   * for those 700ms is dead time - and on a phone it reads as "swiping does nothing while
+   * the loading screen goes away", which is exactly how this was reported. Shared with the
+   * drawer's lock; see `lib/scrollLock.ts` for why the two are one counter.
+   */
+  useScrollLock(phase === 'loading')
 
   /*
    * Hide, never unmount. Unmounting means React calls removeChild on the overlay node, and
@@ -295,36 +310,54 @@ export default function LoadingScreen() {
           <div className="flex items-center gap-[0.32em]">
             <Slash />
 
-            <div ref={trackRef} className="relative h-[0.91em] flex-1">
-              <div
-                ref={counterRef}
-                className="absolute bottom-0 top-0 flex items-center font-mono text-[1em] font-bold leading-none tracking-tighter text-ak-accent will-change-transform"
-              >
-                0%
+            {/* The counter and the rule share one column, and that column is the track: the
+                rule is then exactly as wide as the distance the counter travels, and its ends
+                are where `0%` and `100%` land. As a sibling of the row it spanned the whole
+                block instead - 52px wider at the cap on each side, i.e. the bar ran under the
+                slashes and the counter never reached its ends. Written as nesting rather than
+                as a second copy of the slash width plus the gap in em, so it cannot drift if
+                either changes. */}
+            <div className="min-w-0 flex-1">
+              <div ref={trackRef} className="relative h-[0.91em]">
+                {/*
+                 * Pulled up by less than a tenth of the type size, and it is not a fudge: the
+                 * counter is centred on its LINE BOX, but its ink is only the cap height, so
+                 * the digits sat 0.047em below the slashes' centre and read as low. Raising
+                 * the box by that much centres the ink on the track - which is where the
+                 * slashes are centred - and the shift is in em, so it holds at every width.
+                 * Insets rather than a transform: the frame loop writes `transform` for the
+                 * travel and would overwrite it.
+                 */}
+                <div
+                  ref={counterRef}
+                  className="absolute -top-[0.047em] bottom-[0.047em] flex items-center font-mono text-[1em] font-bold leading-none tracking-tighter text-ak-accent will-change-transform"
+                >
+                  0%
+                </div>
+              </div>
+
+              {/* The fill scales from the left edge so it grows in step with the counter. The
+                  rule and its ticks stay in px: a hairline that scales stops being a hairline,
+                  and the ticks around the counter are already fine detail at the narrow end. */}
+              <div className="relative mt-[0.23em]">
+                <div className="h-px w-full bg-ak-border" />
+                <span
+                  ref={barRef}
+                  aria-hidden
+                  className="ak-progress-fill absolute inset-x-0 top-0 h-px bg-ak-accent"
+                />
+                <div aria-hidden className="absolute inset-x-0 -top-1 flex justify-between">
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((tick) => (
+                    <span
+                      key={tick}
+                      className={`w-px ${tick % 4 === 0 ? 'h-2 bg-ak-accent/60' : 'h-1 bg-ak-border'}`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 
             <Slash flip />
-          </div>
-
-          {/* The fill scales from the left edge so it grows in step with the counter. The rule
-              and its ticks stay in px: a hairline that scales stops being a hairline, and the
-              ticks around the counter are already fine detail at the narrow end. */}
-          <div className="relative mt-[0.23em]">
-            <div className="h-px w-full bg-ak-border" />
-            <span
-              ref={barRef}
-              aria-hidden
-              className="ak-progress-fill absolute inset-x-0 top-0 h-px bg-ak-accent"
-            />
-            <div aria-hidden className="absolute inset-x-0 -top-1 flex justify-between">
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((tick) => (
-                <span
-                  key={tick}
-                  className={`w-px ${tick % 4 === 0 ? 'h-2 bg-ak-accent/60' : 'h-1 bg-ak-border'}`}
-                />
-              ))}
-            </div>
           </div>
         </div>
 

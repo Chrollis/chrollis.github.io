@@ -158,8 +158,21 @@ export const en = {
     email: 'E-MAIL',
     subject: 'SUBJECT',
     message: 'MESSAGE',
+    /*
+     * Placeholders are English in both locales on purpose, so this locale is their only
+     * home and `zh` carries no override for them.
+     *
+     * They are examples and invitations rather than reading matter - the same class as the
+     * labels above them, which are English everywhere for the same reason. And they are the
+     * one string the locale flip cannot animate: `Scramble` writes a text node, a
+     * placeholder is an attribute, so a translated placeholder snapped to the new language
+     * in the middle of a page turning over character by character. A hint that changes
+     * language is worth less than a hint that does not. See `docs/CONVENTIONS.md`.
+     */
     namePlaceholder: 'What should I call you?',
-    emailPlaceholder: 'you@example.com',
+    /* Capitalised like its siblings above and below: an example address is an example
+       string, and a lone lowercase start read as a typo in the column. */
+    emailPlaceholder: 'Example@example.com',
     subjectPlaceholder: 'What is this about?',
     messagePlaceholder: 'Write your message here...',
     send: 'Send message',
@@ -168,6 +181,43 @@ export const en = {
     sent: 'Message sent. I will get back to you soon.',
     sendFailed: 'Send failed',
     sendFailedHint: 'Please try again later, or reach me on GitHub instead.',
+    /*
+     * Field errors and the form summary, as READOUTS rather than sentences: the label above
+     * the field already says which field it is, and what a field needs is a state, not an
+     * explanation. English in both locales, like those labels and the status line - see the
+     * note on placeholders above and `docs/CONVENTIONS.md`.
+     *
+     * `emailUnusable` is separate from `emailIncompleteDomain` so neither has to lie: the
+     * first is an address that cannot be an address at all (whitespace or a comma in the
+     * local part, two `@`, longer than a DNS name), the second is one that is simply not
+     * finished. See `src/lib/validate.ts` for the rules themselves.
+     */
+    required: 'REQUIRED',
+    emailMissingAt: 'MISSING "@"',
+    emailIncompleteDomain: 'INCOMPLETE DOMAIN',
+    emailUnusable: 'CHECK THE ADDRESS',
+    formIncomplete: 'FORM INCOMPLETE',
+    /*
+     * Marks the one field that is NOT required, rather than asterisking the three that are:
+     * the exception is the useful information, and three marks on four fields is noise. It
+     * lives inside the field's `<label>`, so a screen reader reads "SUBJECT OPTIONAL" as the
+     * field's name - the exception is worth announcing.
+     */
+    optional: 'OPTIONAL',
+    /*
+     * The authorization beat, read out as states rather than explained: the track is a
+     * slider, so what it wants is legible, and a sentence above it would read as a caption
+     * under an exhibit. `authRequired` is the one line the form itself repeats, because a
+     * submit that goes nowhere has to say why.
+     */
+    auth: 'AUTH',
+    authHold: 'HOLD',
+    authSampling: 'SAMPLING',
+    authTrace: 'TRACE',
+    authOk: 'OK',
+    authShort: 'SHORT',
+    authNoise: 'NOISE / RETRY',
+    authRequired: 'AUTH REQUIRED',
     notConfigured: 'NOT CONFIGURED',
     notConfiguredHelp: 'The form is not available right now. Please use email instead.',
     emailMe: 'E-mail me',

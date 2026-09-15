@@ -39,11 +39,19 @@ Run `npm run audit:curation` after tagging anything.
 
 ## Language
 
-What gets translated is decided by **type, not role**. Prose - body copy, page intros,
-placeholders, an empty or error explanation, the identity text - is translated. Anything
-set as micro-type stays English: labels, filters, counters, stat labels, readouts, serials,
-page eyebrows, brand and technology names. It is 9-11px tracked uppercase notation, part of
-the instrument look rather than reading matter.
+What gets translated is decided by **type, not role**. Prose - body copy, page intros, an
+empty or error explanation, the identity text - is translated. Anything set as micro-type
+stays English: labels, filters, counters, stat labels, readouts, serials, page eyebrows,
+brand and technology names. It is 9-11px tracked uppercase notation, part of the instrument
+look rather than reading matter.
+
+**Placeholders stay English too**, and they have their own reason: they are examples and
+invitations rather than reading matter (the same class as the label directly above them),
+and they are the one string a locale flip cannot animate. `Scramble` writes a text node;
+a placeholder is an attribute. A translated placeholder therefore snapped to the new
+language in the middle of a page turning over character by character - the only string on
+the site that did - and a hint that changes language is worth less than a hint that does
+not. So `en.ts` is their only home and `zh.ts` deliberately carries no override for them.
 
 Two cases that look like exceptions and are not:
 

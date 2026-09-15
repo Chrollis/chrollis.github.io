@@ -2,11 +2,12 @@
  * Chinese overrides. Only the keys whose Chinese differs from English; everything else
  * is inherited at runtime, so an untranslated key exists once and cannot drift.
  *
- * Only **prose** is translated. Labels, counters, brand names and readout values stay
- * English in both locales: they are 9-11px tracked uppercase micro-type, part of the
- * instrument look rather than reading matter, and translating them reads as machine
- * translation. Placeholders are the exception - a field is 14px body text read as a
- * sentence. See `docs/CONVENTIONS.md`.
+ * Only **prose** is translated. Labels, counters, brand names, readout values and
+ * **placeholders** stay English in both locales: the first group is 9-11px tracked
+ * uppercase micro-type, part of the instrument look rather than reading matter, and the
+ * second is an example or an invitation ("Example@example.com", "What should I call
+ * you?") - and the one string a locale flip cannot animate, because `Scramble` writes a
+ * text node while a placeholder is an attribute. See `docs/CONVENTIONS.md`.
  *
  * `DeepPartial<Strings>` makes a key that does not exist in `en.ts` a compile error, so
  * this file cannot invent one or outlive a deletion.
@@ -62,15 +63,14 @@ export const zh: DeepPartial<Strings> = {
 
   contact: {
     intro: '项目相关的事，请到对应仓库开 issue。其他事，请通过下面这些渠道联系。',
-    namePlaceholder: '怎么称呼你？',
     notConfiguredHelp: '表单暂时不可用，请改用邮件联系。',
-    subjectPlaceholder: '想聊什么？',
-    messagePlaceholder: '在这里写内容…',
+    /* No `namePlaceholder` / `emailPlaceholder` / `subjectPlaceholder` /
+       `messagePlaceholder` here on purpose: placeholders stay English in both locales, so
+       they have no override to carry. See the note in `en.ts` and `docs/CONVENTIONS.md`. */
   },
 
-  search: {
-    placeholder: '搜索标题、标签和正文…',
-  },
+  /* `search` has no override: its only text was the field's placeholder, which is English
+     in both locales. */
 
   notFound: {
     body: '这里没有东西。链接也许过期了，也许这个页面本来就不在。',

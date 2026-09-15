@@ -409,16 +409,30 @@
     border-left-width: 1px;
   }
 
-  /* Added by the component once it is running. Hiding the native cursor in plain CSS would
-     leave the site with no pointer at all if the bundle failed to load. */
+  /*
+   * Added by the component once it is running. Hiding the native cursor in plain CSS would
+   * leave the site with no pointer at all if the bundle failed to load.
+   *
+   * `!important` for the same reason as the square corners above, and it is load-bearing: a
+   * `cursor:` declaration anywhere in the app beats this rule on source order otherwise, and a
+   * native cursor appearing beside the reticle is a bug every time. Three had already crept in
+   * - `cursor: pointer` on the authorization slider, Tailwind's `disabled:cursor-not-allowed`
+   * on the submit button, and `cursor: default` on the inert README links. All three are
+   * correct for the case this rule does not cover (no custom cursor running), so the fix is to
+   * make the rule unlosable rather than to hunt them down one at a time.
+   */
   .ak-cursor-active,
   .ak-cursor-active * {
-    cursor: none;
+    cursor: none !important;
   }
-  /* Must come after the rule above: a text field needs a real I-beam. */
-  .ak-cursor-active *:is(input, textarea) {
-    cursor: text;
-  }
+
+  /*
+   * Fields used to be an exception here: `cursor: text` on inputs and textareas, on the
+   * argument that a field wants a real I-beam. Two pointers at once is worse than one, and the
+   * reticle already frames whatever is interactive, so the exception is gone. The text caret
+   * is a different thing entirely and is untouched: editing still looks like editing,
+   * whatever the mouse is drawn as.
+   */
 
   /* Coarse pointers get nothing: no hover to report and no cursor to replace. */
   @media (pointer: coarse) {
@@ -714,6 +728,45 @@
   .ak-progress-fill {
     transform-origin: left center;
     will-change: transform;
+  }
+
+  /*
+   * Authorization slider. A native range input keeps the role, the keyboard (arrows, Home,
+   * End) and the value for free; everything visible is drawn under it, and the input's own
+   * track is transparent so those layers show through. The native thumb stays visible and
+   * styled, because its position is the one thing the browser owns: drawing our own would
+   * mean reproducing each engine's half-thumb inset at the ends, which is exactly the kind of
+   * 1.5px mismatch this site notices.
+   */
+  .ak-auth {
+    appearance: none;
+    position: relative;
+    width: 100%;
+    height: 1.75rem;
+    background: none;
+  }
+  .ak-auth::-webkit-slider-runnable-track {
+    height: 1px;
+    background: transparent;
+  }
+  .ak-auth::-webkit-slider-thumb {
+    appearance: none;
+    width: 3px;
+    height: 1.375rem;
+    /* Centre the thumb on the 1px track: half the thumb, minus half the track. */
+    margin-top: calc((1px - 1.375rem) / 2);
+    border: 0;
+    background: rgb(var(--ak-accent));
+  }
+  .ak-auth::-moz-range-track {
+    height: 1px;
+    background: transparent;
+  }
+  .ak-auth::-moz-range-thumb {
+    width: 3px;
+    height: 1.375rem;
+    border: 0;
+    background: rgb(var(--ak-accent));
   }
 }
 

@@ -308,6 +308,15 @@ harmless and would kill the inversion.
 The native cursor is hidden by a class the component adds at runtime, never by a CSS rule,
 so a bundle that failed to load cannot leave the site with no pointer.
 
+That hiding rule is the one place in the stylesheet that carries `!important`, and it earns
+it: a `cursor:` declaration beats it on source order otherwise, so every component that sets
+one is a native pointer appearing beside the reticle. There are three (the authorization
+slider, Tailwind's `disabled:cursor-not-allowed` on the submit button, `cursor: default` on
+inert README links) - all correct for the case where no custom cursor is running, which is why
+the rule is made unlosable instead of the declarations being removed one by one. Fields are
+**not** an exception any more: they used to keep a real I-beam, and two pointers at once is
+worse than one. The text caret is unaffected - a field still edits like a field.
+
 ---
 
 ## Reading a repository README

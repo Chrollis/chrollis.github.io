@@ -20,7 +20,9 @@
     "data:fetch": "node scripts/fetch-github.mjs",
     "audit:curation": "node scripts/audit-curation.mjs",
     "audit:strings": "node scripts/audit-strings.mjs",
-    "test:curation": "node scripts/verify-curation.mjs"
+    "test:curation": "node scripts/verify-curation.mjs",
+    "test:contact": "node scripts/verify-contact.mjs",
+    "test:human": "node scripts/verify-human.mjs"
   },
   "dependencies": {
     "@fontsource/blinker": "^5.3.0",
